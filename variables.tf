@@ -26,8 +26,12 @@ variable "vsphere_vm_name" {
         description = "What is the name of the VM"
 }
 
-variable "vsphare_vm_template" {
+variable "vsphere_vm_template" {
 	description = "Where is the VM template located"
+}
+
+variable "vsphere_vm_folder" {
+	description = "In which folder the VM will be store"
 }
 
 variable "vsphere_cluster" {

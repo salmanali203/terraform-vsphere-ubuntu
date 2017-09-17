@@ -40,7 +40,7 @@ resource "vsphere_virtual_machine" "terraform-ubuntu" {
 	}
 
 	dns_servers = ["${split(",", var.vsphere_dns_servers)}"]
-	hostname = "${var.vsphere_hostname}"
+	hostname = "${var.vsphere_vm_name}"
 
 	# VM timezone
 
