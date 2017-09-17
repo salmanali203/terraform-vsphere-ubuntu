@@ -1,7 +1,7 @@
 # terraform-vsphere-ubuntu
 
-This Terraform script deploy an Ubuntu 16.04 VM on VMware vSphere.
+This simple Terraform script deploy an Ubuntu 16.04 virtual machine on VMware vSphere.
 
-You can find all the steps on blog.inkubate.io:
+You can find all the detailed steps on blog.inkubate.io:
 
-[Deploy a VMware vSphere Virtual Machine with Terraform]()
+[Deploy a VMware vSphere Virtual Machine with Terraform](https://blog.inkubate.io/deploy-a-vmware-vsphere-virtual-machine-with-terraform/)
