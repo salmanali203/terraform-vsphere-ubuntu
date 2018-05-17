@@ -1,48 +1,100 @@
-# Configure vSphere provider
+#===============================================================================
+# vSphere Provider
+#===============================================================================
 provider "vsphere" {
-	vsphere_server = "${var.vsphere_vcenter}"
-	user = "${var.vsphere_user}"
-	password = "${var.vsphere_password}"
+  version        = "1.5.0"
+  vsphere_server = "${var.vsphere_vcenter}"
+  user           = "${var.vsphere_user}"
+  password       = "${var.vsphere_password}"
 
-	allow_unverified_ssl = "${var.vsphere_unverified_ssl}"
+  allow_unverified_ssl = "${var.vsphere_unverified_ssl}"
 }
 
-# Create a vSphere VM folder
+#===============================================================================
+# vSphere Data
+#===============================================================================
+
+data "vsphere_datacenter" "dc" {
+  name = "${var.vsphere_datacenter}"
+}
+
+data "vsphere_compute_cluster" "cluster" {
+  name          = "${var.vsphere_cluster}"
+  datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+data "vsphere_datastore" "datastore" {
+  name          = "${var.vsphere_datastore}"
+  datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+data "vsphere_network" "network" {
+  name          = "${var.vsphere_port_group}"
+  datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+data "vsphere_virtual_machine" "template" {
+  name          = "${var.vsphere_vm_template}"
+  datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+#===============================================================================
+# vSphere Resources
+#===============================================================================
+
+# Create a vSphere VM folder #
 resource "vsphere_folder" "terraform-ubuntu-01" {
-	datacenter = "${var.vsphere_datacenter}"
-	path = "${var.vsphere_vm_folder}"
+  path          = "${var.vsphere_vm_folder}"
+  type          = "vm"
+  datacenter_id = "${data.vsphere_datacenter.dc.id}"
 }
 
-# Create a vSphere VM in the terraform folder
+# Create a vSphere VM in the folder #
 resource "vsphere_virtual_machine" "terraform-ubuntu" {
-	# VM placement
-	name = "${var.vsphere_vm_name}"
-	folder = "${vsphere_folder.terraform-ubuntu-01.path}"
-        datacenter = "${var.vsphere_datacenter}"
-        cluster = "${var.vsphere_cluster}"
+  # VM placement #
+  name             = "${var.vsphere_vm_name}"
+  resource_pool_id = "${data.vsphere_compute_cluster.cluster.resource_pool_id}"
+  datastore_id     = "${data.vsphere_datastore.datastore.id}"
+  folder           = "${vsphere_folder.terraform-ubuntu-01.path}"
 
-	# VM resources
-	vcpu = "${var.vsphere_vcpu_number}"
-	memory = "${var.vsphere_memory_size}"
+  # VM resources #
+  num_cpus = "${var.vsphere_vcpu_number}"
+  memory   = "${var.vsphere_memory_size}"
 
-        # VM storage
-        disk {
-                datastore = "${var.vsphere_datastore}"
-                template = "${var.vsphere_vm_template}"
-        }
+  # Guest OS #
+  guest_id = "${data.vsphere_virtual_machine.template.guest_id}"
 
-	# VM networking
-	network_interface {
-		label = "${var.vsphere_port_group}"
-		ipv4_address = "${var.vsphere_ipv4_address}"
-		ipv4_prefix_length = "${var.vsphere_ipv4_netmask}"
-		ipv4_gateway = "${var.vsphere_ipv4_gateway}"
-	}
+  # VM storage #
+  disk {
+    label            = "${var.vsphere_vm_name}.vmdk"
+    size             = "${data.vsphere_virtual_machine.template.disks.0.size}"
+    thin_provisioned = "${data.vsphere_virtual_machine.template.disks.0.thin_provisioned}"
+  }
 
-	dns_servers = ["${split(",", var.vsphere_dns_servers)}"]
-	hostname = "${var.vsphere_vm_name}"
+  # VM networking #
+  network_interface {
+    network_id   = "${data.vsphere_network.network.id}"
+    adapter_type = "${data.vsphere_virtual_machine.template.network_interface_types[0]}"
+  }
 
-	# VM timezone
+  # Customization of the VM #
+  clone {
+    template_uuid = "${data.vsphere_virtual_machine.template.id}"
 
-	time_zone = "${var.vsphere_time_zone}"
+    customize {
+      linux_options {
+        host_name = "${var.vsphere_vm_name}"
+        domain    = "${var.vsphere_domain}"
+        time_zone = "${var.vsphere_time_zone}"
+      }
+
+      network_interface {
+        ipv4_address = "${var.vsphere_ipv4_address}"
+        ipv4_netmask = "${var.vsphere_ipv4_netmask}"
+      }
+
+      ipv4_gateway    = "${var.vsphere_ipv4_gateway}"
+      dns_server_list = ["${var.vsphere_dns_servers}"]
+    }
+  }
 }
