@@ -14,7 +14,7 @@ vsphere_vm_folder = "terraform-ubuntu-01"
 
 vsphere_vm_name = "ubuntu-01"
 
-vsphere_vm_template = "terraform-template/ubuntu-16.04-terraform-template"
+vsphere_vm_template = "template/ubuntu-16.04-template"
 
 vsphere_cluster = ""
 
